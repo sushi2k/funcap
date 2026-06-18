@@ -124,12 +124,14 @@ model AuditEvent {
 }
 
 model Session {
-  id         String  @id
-  user_id    String
-  created_at String
-  expires_at String
-  user_agent String?
-  ip         String?
+  id               String  @id
+  user_id          String
+  created_at       String
+  expires_at       String
+  last_seen_at     String
+  mfa_verified_at  String?
+  user_agent       String?
+  ip               String?
 
   user User @relation(fields: [user_id], references: [id])
 
