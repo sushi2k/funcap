@@ -70,6 +70,7 @@ model Match {
   outcome        String? // NORMAL | RETIREMENT | WALKOVER
   sets           String? // JSON-encoded array
   state          String  // PENDING | CONFIRMED | DISPUTED | VOIDED
+  dispute_reason String?
   played_at      String
   entered_by_id  String
   entered_at     String
