@@ -21,6 +21,10 @@ const Env = z.object({
   FIRST_ADMIN_DISPLAY_NAME: z.string().min(2).max(30).optional(),
   FIRST_ADMIN_PASSWORD: z.string().min(12).optional(),
 
+  // Finalize cron expression (arch §10 — daily). Override for tighter loops
+  // in dev (e.g. "* * * * *" to run every minute).
+  FUNCAP_FINALIZE_CRON: z.string().default("0 3 * * *"),
+
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 

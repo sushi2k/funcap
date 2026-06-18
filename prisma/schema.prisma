@@ -48,6 +48,7 @@ model User {
 
 model Tournament {
   id              String  @id
+  name            String
   starts_at       String
   ends_at         String
   closing_ends_at String
