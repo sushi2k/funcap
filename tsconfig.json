@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "preserve",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "incremental": true,
+    "allowJs": false,
+    "noEmit": true,
+    "plugins": [{ "name": "next" }],
+    "baseUrl": ".",
+    "paths": {
+      "@/app/*": ["app/*"],
+      "@/domain/*": ["src/domain/*"],
+      "@/application/*": ["src/application/*"],
+      "@/server/*": ["src/server/*"],
+      "@/shared/*": ["src/shared/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "app/**/*.ts", "app/**/*.tsx", "src/**/*.ts", "src/**/*.tsx", "middleware.ts", "prisma/**/*.ts", "tests/**/*.ts", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
