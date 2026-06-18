@@ -42,3 +42,20 @@ export async function apiGet<T>(path: string): Promise<{ status: number; data: T
   const data = text ? (JSON.parse(text) as T) : ({} as T);
   return { status: res.status, data };
 }
+
+export async function apiDelete<T>(path: string): Promise<{ status: number; data: T }> {
+  const res = await fetch(path, {
+    method: "DELETE",
+    credentials: "same-origin",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrfCookie(),
+    },
+    // Some servers reject DELETE without a body. Our guardMutation requires
+    // application/json content-type but doesn't require a non-empty body.
+    body: "{}",
+  });
+  const text = await res.text();
+  const data = text ? (JSON.parse(text) as T) : ({} as T);
+  return { status: res.status, data };
+}
