@@ -20,6 +20,7 @@ export default defineConfig({
       // namespace — inlining lets vite transform it correctly.
       deps: { inline: [/^otplib/, /^@otplib\//] },
     },
+    globalSetup: ["./tests/_setup/migrate.ts"],
     env: {
       DATABASE_URL: "file:./test-only.db",
       SESSION_SECRET: "test-session-secret-padded-to-32-chars-xxxx",

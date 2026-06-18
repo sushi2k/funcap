@@ -74,6 +74,27 @@ export async function listAllWindows(): Promise<TournamentWindow[]> {
   });
 }
 
+// req §5.4 — a match's tournament is the one whose ACTIVE window contains
+// `played_at`. Non-overlap (§5.4) means at most one match here. Returns the
+// tournament DTO (with derived state) so the service can also verify the
+// caller is acting in a window that permits entry/approval (§5.2).
+export async function findTournamentContainingPlayedAt(
+  playedAtIso: string,
+  now: number = Date.now(),
+): Promise<TournamentDTO | null> {
+  const playedMs = Date.parse(playedAtIso);
+  if (Number.isNaN(playedMs)) return null;
+  const rows = await prisma.tournament.findMany({
+    where: {
+      starts_at: { lte: playedAtIso },
+      ends_at: { gt: playedAtIso },
+    },
+    select: selectRow,
+  });
+  if (rows.length === 0) return null;
+  return toDto(rows[0]!, now);
+}
+
 // ---------- Create ----------
 export type CreateTournamentInput = {
   name: string;

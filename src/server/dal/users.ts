@@ -266,3 +266,32 @@ export async function verifyMfaCodeForUser(userId: string, code: string): Promis
   const secret = decryptSecret(row.totp_secret);
   return verifyTotpCode(secret, code);
 }
+
+// Matchmaking pool (req §4): every ACTIVE user other than the caller, with
+// the minimal columns the domain ranking and the DTO need. PII (email) stays
+// inside the DAL.
+export type MatchmakingCandidateRow = {
+  id: string;
+  display_name: string;
+  self_level: number | null;
+};
+
+export async function listActiveCandidatesExcept(
+  callerUserId: string,
+  excludeIds: ReadonlyArray<string> = [],
+): Promise<MatchmakingCandidateRow[]> {
+  const exclude = new Set<string>([callerUserId, ...excludeIds]);
+  const rows = await prisma.user.findMany({
+    where: { status: "ACTIVE", id: { notIn: Array.from(exclude) } },
+    select: { id: true, display_name: true, self_level: true },
+  });
+  return rows.map((r) => ({ id: r.id, display_name: r.display_name, self_level: r.self_level }));
+}
+
+export async function getSelfLevel(userId: string): Promise<number | null> {
+  const row = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { self_level: true },
+  });
+  return row?.self_level ?? null;
+}
