@@ -2,7 +2,17 @@ import type { NextRequest } from "next/server";
 import { errorJson, guardMutation, json, readJson } from "@/server/security/route-helpers";
 import { getCurrentSession } from "@/server/auth/current-session";
 import { EnterMatchInput } from "@/shared/schemas/match";
-import { enterScore } from "@/application/match";
+import { enterScore, listMyMatches } from "@/application/match";
+
+// GET — caller's own matches. The DAL WHERE clause is keyed to the session
+// identity (DAL-2). No query parameters needed; cross-user reads would
+// require a separate, explicitly-authorised endpoint.
+export async function GET(req: NextRequest) {
+  const session = await getCurrentSession(req);
+  if (!session) return errorJson(401, "Not authenticated");
+  const matches = await listMyMatches(session.userId);
+  return json({ matches });
+}
 
 export async function POST(req: NextRequest) {
   const guarded = await guardMutation(req);

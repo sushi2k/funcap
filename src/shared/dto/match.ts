@@ -24,3 +24,14 @@ export type SuggestionDTO = {
   display_name: string;
   self_level: number | null;
 };
+
+// "My matches" view — used by GET /api/matches for the player UI.
+// Decorated with opponent display name and whether the caller is the
+// entrant, so the client can render the right affordance (approve/reject
+// vs withdraw) without re-fetching user data.
+export type MyMatchDTO = MatchDTO & {
+  opponent_id: string;
+  opponent_display_name: string;
+  entered_by_me: boolean;
+  needs_my_approval: boolean;
+};

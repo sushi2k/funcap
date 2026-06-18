@@ -83,6 +83,18 @@ export async function getMatchById(id: string): Promise<MatchDTO | null> {
   return row ? toDto(row) : null;
 }
 
+// "My matches" — every match in which the caller is a participant. Ordered
+// recent-first. Authorization (only the caller) is the *purpose* of the
+// query: the WHERE clause is keyed to the session identity.
+export async function listMatchesForUser(callerUserId: string): Promise<MatchDTO[]> {
+  const rows = await prisma.match.findMany({
+    where: { OR: [{ player_a_id: callerUserId }, { player_b_id: callerUserId }] },
+    select: selectRow,
+    orderBy: { entered_at: "desc" },
+  });
+  return rows.map(toDto);
+}
+
 // Identifies opponents the caller has played an OFFICIAL non-VOIDED match
 // against in the given tournament (req §4 — exclusion set for OFFICIAL
 // suggestions). Returns user-ids only; no PII.

@@ -9,10 +9,12 @@ import {
   approvePendingMatch as dalApprove,
   rejectPendingMatch as dalReject,
   getMatchById,
+  listMatchesForUser,
   listOfficialOpponentsInTournament,
   getCareerStats,
   getCareerStatsMany,
 } from "@/server/dal/matches";
+import { getDisplayNamesFor } from "@/server/dal/scoreboard";
 import {
   findTournamentContainingPlayedAt,
   getTournamentById,
@@ -20,7 +22,7 @@ import {
 } from "@/server/dal/tournaments";
 import { listActiveCandidatesExcept, getSelfLevel } from "@/server/dal/users";
 import { rankSuggestions, type Candidate } from "@/domain/matchmaking";
-import type { MatchDTO, SuggestionDTO } from "@/shared/dto/match";
+import type { MatchDTO, MyMatchDTO, SuggestionDTO } from "@/shared/dto/match";
 
 // ---------- Enter score (POST /matches) ----------
 
@@ -211,4 +213,28 @@ export async function listSuggestions(
     display_name: c.display_name,
     self_level: c.self_level,
   }));
+}
+
+// ---------- My matches (GET /api/matches) ----------
+
+export async function listMyMatches(callerUserId: string): Promise<MyMatchDTO[]> {
+  const matches = await listMatchesForUser(callerUserId);
+  if (matches.length === 0) return [];
+  const opponentIds = new Set<string>();
+  for (const m of matches) {
+    opponentIds.add(m.player_a_id === callerUserId ? m.player_b_id : m.player_a_id);
+  }
+  const names = await getDisplayNamesFor(Array.from(opponentIds));
+  return matches.map<MyMatchDTO>((m) => {
+    const opponentId = m.player_a_id === callerUserId ? m.player_b_id : m.player_a_id;
+    const enteredByMe = m.entered_by_id === callerUserId;
+    return {
+      ...m,
+      opponent_id: opponentId,
+      opponent_display_name: names.get(opponentId) ?? opponentId,
+      entered_by_me: enteredByMe,
+      // Counterparty approves; only PENDING matches can be approved/rejected.
+      needs_my_approval: m.state === "PENDING" && !enteredByMe,
+    };
+  });
 }
