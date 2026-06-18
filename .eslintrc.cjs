@@ -46,5 +46,10 @@ module.exports = {
         "no-restricted-imports": "off",
       },
     },
+    {
+      // instrumentation.ts checks NEXT_RUNTIME — Next-internal, not a secret.
+      files: ["instrumentation.ts"],
+      rules: { "no-restricted-syntax": "off" },
+    },
   ],
 };
