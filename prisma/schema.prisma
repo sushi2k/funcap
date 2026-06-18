@@ -1,0 +1,137 @@
+// Funcap — Prisma schema (SQLite).
+//
+// Per architecture.md §8.1 and requirements.md §16:
+//   - SQLite has no native enum or Json type; all enums, JSON arrays
+//     (Match.sets, AuditEvent.details), UUIDs, and timestamps are TEXT and
+//     validated at the Zod boundary.
+//   - The one-match-per-pairing partial unique index (req §6.2) is added in a
+//     raw migration (Prisma cannot express partial indexes). It lands in
+//     issue #4.
+//   - Standings and career are derived (req §8/§9, arch §8.5) and have no
+//     tables here.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String   @id
+  email                String   @unique
+  display_name         String   @unique
+  password_hash        String
+  must_change_password Boolean  @default(false)
+  role                 String   // PLAYER | ADMIN
+  status               String   // ACTIVE | LEFT
+  self_level           Int?
+  mfa_enabled          Boolean  @default(false)
+  totp_secret          String?  // AES-256-GCM encrypted at rest
+  failed_login_count   Int      @default(0)
+  locked_until         String?
+  created_at           String
+  updated_at           String
+
+  matches_as_a   Match[]        @relation("MatchPlayerA")
+  matches_as_b   Match[]        @relation("MatchPlayerB")
+  matches_won    Match[]        @relation("MatchWinner")
+  matches_entered Match[]       @relation("MatchEnteredBy")
+  matches_resolved Match[]      @relation("MatchResolvedBy")
+  matches_amended Match[]       @relation("MatchAmendedBy")
+  notifications  Notification[]
+  audit_events   AuditEvent[]
+  sessions       Session[]
+}
+
+model Tournament {
+  id              String  @id
+  starts_at       String
+  ends_at         String
+  closing_ends_at String
+  match_format    String  // BEST_OF_3_FULL | BEST_OF_3_SUPER_TB
+  finalized_at    String?
+
+  matches Match[]
+}
+
+model Match {
+  id             String  @id
+  tournament_id  String
+  type           String  // OFFICIAL | FRIENDLY
+  player_a_id    String
+  player_b_id    String
+  pair_low_id    String
+  pair_high_id   String
+  winner_id      String?
+  outcome        String? // NORMAL | RETIREMENT | WALKOVER
+  sets           String? // JSON-encoded array
+  state          String  // PENDING | CONFIRMED | DISPUTED | VOIDED
+  played_at      String
+  entered_by_id  String
+  entered_at     String
+  resolved_by_id String?
+  resolved_at    String?
+  amended_by_id  String?
+  amended_at     String?
+
+  tournament  Tournament @relation(fields: [tournament_id], references: [id])
+  player_a    User       @relation("MatchPlayerA",    fields: [player_a_id],   references: [id])
+  player_b    User       @relation("MatchPlayerB",    fields: [player_b_id],   references: [id])
+  winner      User?      @relation("MatchWinner",     fields: [winner_id],     references: [id])
+  entered_by  User       @relation("MatchEnteredBy",  fields: [entered_by_id], references: [id])
+  resolved_by User?      @relation("MatchResolvedBy", fields: [resolved_by_id], references: [id])
+  amended_by  User?      @relation("MatchAmendedBy",  fields: [amended_by_id],  references: [id])
+
+  notifications Notification[]
+
+  @@index([tournament_id, type, state])
+  @@index([player_a_id])
+  @@index([player_b_id])
+  @@index([winner_id])
+}
+
+model Notification {
+  id         String  @id
+  user_id    String
+  match_id   String?
+  kind       String
+  read       Boolean @default(false)
+  created_at String
+
+  user  User   @relation(fields: [user_id], references: [id])
+  match Match? @relation(fields: [match_id], references: [id])
+
+  @@index([user_id, read])
+}
+
+model AuditEvent {
+  id            String  @id
+  actor_user_id String
+  action        String
+  target_type   String
+  target_id     String
+  details       String  // JSON-encoded
+  reason        String?
+  ip            String?
+  created_at    String
+
+  actor User @relation(fields: [actor_user_id], references: [id])
+
+  @@index([actor_user_id, created_at])
+}
+
+model Session {
+  id         String  @id
+  user_id    String
+  created_at String
+  expires_at String
+  user_agent String?
+  ip         String?
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+}
